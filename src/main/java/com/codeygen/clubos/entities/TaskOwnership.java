@@ -18,7 +18,7 @@ public class TaskOwnership {
 
     private LocalDateTime ownershipAssignedAt;
     @ManyToOne
-    @JoinColumn(name="user_id")
+    @JoinColumn(name="transferred_to_user_id")
     private Member ownershipTransferredTo;
 
     @ManyToOne
@@ -26,6 +26,6 @@ public class TaskOwnership {
     public OwnershipBasedTask task;
 
     @ManyToOne
-    @JoinColumn(name="user_id")
+    @JoinColumn(name="owner_user_id")
     public Member owner;
 }
