@@ -1,10 +1,10 @@
 package com.codeygen.clubos.entities.user;
 
+import com.codeygen.clubos.entities.user.enums.Roles;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.management.relation.Role;
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,5 +26,5 @@ public class User {
 
     private LocalDateTime createdAt;
 
-    private Role role;
+    private Roles role;
 }
