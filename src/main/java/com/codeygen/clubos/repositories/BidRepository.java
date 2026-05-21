@@ -16,4 +16,8 @@ public interface BidRepository extends JpaRepository<Bid, String> {
              m.cumulativePoints ASC
     """)
     List<Bid> rankBids(String taskId);
+
+    List<Bid> findByTask_TaskId(String taskId);
+
+    boolean existsByTask_TaskIdAndMember_UserId(String taskId, String userId);
 }
