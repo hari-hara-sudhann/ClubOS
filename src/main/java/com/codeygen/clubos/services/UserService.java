@@ -138,4 +138,18 @@ public class UserService {
         memberRepo.deleteById(member.getUserId());
         memberRepo.save(demotedMember);
     }
+
+    @Transactional
+    public void changeMemberDepartment(String memberId, String toDepartmentId) throws NoSuchElementException {
+        // All responsibilities of members in the previous department still holds.
+        // New tasks are assigned by the later departments.
+        Member member = memberRepo.findById(memberId)
+                .orElseThrow(() -> new NoSuchElementException("Member not found!"));
+
+        Department toDepartment = departmentRepo.findById(toDepartmentId)
+                .orElseThrow(() -> new NoSuchElementException("Department not found"));
+
+        member.setDept(toDepartment);
+        memberRepo.save(member);
+    }
 }

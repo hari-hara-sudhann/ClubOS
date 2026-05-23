@@ -379,4 +379,90 @@ class UserServiceTest {
         assertEquals(0,
                 demotedMember.getCumulativePoints());
     }
+    @Test
+    void shouldChangeMemberDepartmentSuccessfully() {
+
+        // Arrange
+
+        Department oldDepartment = new Department();
+        oldDepartment.setDepartmentId("dept-old");
+
+        Department newDepartment = new Department();
+        newDepartment.setDepartmentId("dept-new");
+
+        Member member = new Member();
+        member.setUserId("member-1");
+        member.setDept(oldDepartment);
+
+        when(memberRepo.findById("member-1"))
+                .thenReturn(Optional.of(member));
+
+        when(departmentRepo.findById("dept-new"))
+                .thenReturn(Optional.of(newDepartment));
+
+        // Act
+
+        userService.changeMemberDepartment(
+                "member-1",
+                "dept-new"
+        );
+
+        // Assert
+
+        assertEquals(
+                newDepartment,
+                member.getDept()
+        );
+
+        verify(memberRepo, times(1))
+                .save(member);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenMemberNotFoundWhileChangingDepartment() {
+
+        // Arrange
+
+        when(memberRepo.findById("invalid-member"))
+                .thenReturn(Optional.empty());
+
+        // Act + Assert
+
+        assertThrows(
+                NoSuchElementException.class,
+                () -> userService.changeMemberDepartment(
+                        "invalid-member",
+                        "dept-new"
+                )
+        );
+
+        verify(memberRepo, never()).save(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDepartmentNotFoundWhileChangingDepartment() {
+
+        // Arrange
+
+        Member member = new Member();
+        member.setUserId("member-1");
+
+        when(memberRepo.findById("member-1"))
+                .thenReturn(Optional.of(member));
+
+        when(departmentRepo.findById("invalid-dept"))
+                .thenReturn(Optional.empty());
+
+        // Act + Assert
+
+        assertThrows(
+                NoSuchElementException.class,
+                () -> userService.changeMemberDepartment(
+                        "member-1",
+                        "invalid-dept"
+                )
+        );
+
+        verify(memberRepo, never()).save(any());
+    }
 }
