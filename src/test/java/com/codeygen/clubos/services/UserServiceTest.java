@@ -4,9 +4,11 @@ import com.codeygen.clubos.dtos.BulkMemberImportDto;
 import com.codeygen.clubos.dtos.MemberCredentialsDto;
 import com.codeygen.clubos.dtos.MemberImportDto;
 import com.codeygen.clubos.entities.Department;
+import com.codeygen.clubos.entities.user.Lead;
 import com.codeygen.clubos.entities.user.Member;
 import com.codeygen.clubos.entities.user.enums.Roles;
 import com.codeygen.clubos.repositories.DepartmentRepository;
+import com.codeygen.clubos.repositories.user.LeadRepository;
 import com.codeygen.clubos.repositories.user.MemberRepository;
 import com.codeygen.clubos.repositories.user.UserRepository;
 import com.codeygen.clubos.utils.HashPassword;
@@ -19,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,6 +39,9 @@ class UserServiceTest {
 
     @Mock
     private DepartmentRepository departmentRepo;
+
+    @Mock
+    private LeadRepository leadRepository;
 
     @Mock
     private HashPassword hashPassword;
@@ -146,7 +152,7 @@ class UserServiceTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenDepartmentNotFound() {
+    void shouldThrowExceptionWhenDepartmentNotFoundInMember() {
 
         MemberImportDto memberDto = new MemberImportDto();
         memberDto.setName("Hari");
@@ -249,5 +255,128 @@ class UserServiceTest {
         assertTrue(result.isEmpty());
 
         verify(memberRepo, never()).save(any());
+    }
+    @Test
+    void shouldPromoteMemberToLeadSuccessfully() {
+
+        // Arrange
+
+        String memberId = "member-1";
+
+        Department department = new Department();
+        department.setDepartmentId("dept-1");
+
+        Member member = new Member();
+        member.setUserId(memberId);
+        member.setName("Hari");
+        member.setEmail("hari@example.com");
+        member.setPasswordHash("hashed-password");
+        member.setMustChangePassword(true);
+        member.setDept(department);
+
+        Lead currentLead = new Lead();
+        currentLead.setUserId("lead-1");
+        currentLead.setName("Arjun");
+        currentLead.setEmail("arjun@example.com");
+        currentLead.setPasswordHash("lead-password");
+        currentLead.setMustChangePassword(false);
+
+        department.setDeptLead(currentLead);
+
+        when(memberRepo.findById(memberId))
+                .thenReturn(Optional.of(member));
+
+        when(departmentRepo.findById("dept-1"))
+                .thenReturn(Optional.of(department));
+
+        // Act
+
+        userService.promoteToLead(memberId);
+
+        // Assert
+
+        verify(leadRepository, times(1))
+                .save(any(Lead.class));
+
+        verify(memberRepo, times(1))
+                .save(any(Member.class));
+
+        verify(leadRepository, times(1))
+                .deleteById("lead-1");
+
+        verify(memberRepo, times(1))
+                .deleteById(memberId);
+
+        ArgumentCaptor<Lead> leadCaptor =
+                ArgumentCaptor.forClass(Lead.class);
+
+        verify(leadRepository).save(leadCaptor.capture());
+
+        Lead savedLead = leadCaptor.getValue();
+
+        assertEquals(memberId, savedLead.getUserId());
+        assertEquals("Hari", savedLead.getName());
+        assertEquals("hari@example.com", savedLead.getEmail());
+        assertEquals(Roles.LEAD, savedLead.getRole());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenMemberNotFound() {
+
+        when(memberRepo.findById("invalid-member"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                NoSuchElementException.class,
+                () -> userService.promoteToLead("invalid-member")
+        );
+
+        verifyNoInteractions(leadRepository);
+    }
+
+
+    @Test
+    void shouldCreateDemotedMemberFromCurrentLead() {
+
+        Department department = new Department();
+        department.setDepartmentId("dept-1");
+
+        Member promotedMember = new Member();
+        promotedMember.setUserId("member-1");
+        promotedMember.setDept(department);
+
+        Lead currentLead = new Lead();
+        currentLead.setUserId("lead-1");
+        currentLead.setName("Current Lead");
+        currentLead.setEmail("lead@example.com");
+        currentLead.setPasswordHash("hashed");
+        currentLead.setMustChangePassword(false);
+
+        department.setDeptLead(currentLead);
+
+        when(memberRepo.findById("member-1"))
+                .thenReturn(Optional.of(promotedMember));
+
+        when(departmentRepo.findById("dept-1"))
+                .thenReturn(Optional.of(department));
+
+        userService.promoteToLead("member-1");
+
+        ArgumentCaptor<Member> memberCaptor =
+                ArgumentCaptor.forClass(Member.class);
+
+        verify(memberRepo).save(memberCaptor.capture());
+
+        Member demotedMember = memberCaptor.getValue();
+
+        assertEquals("lead-1", demotedMember.getUserId());
+        assertEquals("Current Lead", demotedMember.getName());
+        assertEquals("lead@example.com", demotedMember.getEmail());
+
+        assertEquals(30,
+                demotedMember.getTokensAvailable());
+
+        assertEquals(0,
+                demotedMember.getCumulativePoints());
     }
 }

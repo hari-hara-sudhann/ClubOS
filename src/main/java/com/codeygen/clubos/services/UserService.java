@@ -4,9 +4,11 @@ import com.codeygen.clubos.dtos.BulkMemberImportDto;
 import com.codeygen.clubos.dtos.MemberCredentialsDto;
 import com.codeygen.clubos.dtos.MemberImportDto;
 import com.codeygen.clubos.entities.Department;
+import com.codeygen.clubos.entities.user.Lead;
 import com.codeygen.clubos.entities.user.Member;
 import com.codeygen.clubos.entities.user.enums.Roles;
 import com.codeygen.clubos.repositories.DepartmentRepository;
+import com.codeygen.clubos.repositories.user.LeadRepository;
 import com.codeygen.clubos.repositories.user.MemberRepository;
 import com.codeygen.clubos.repositories.user.UserRepository;
 import com.codeygen.clubos.utils.HashPassword;
@@ -18,6 +20,8 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -26,6 +30,7 @@ public class UserService {
     private final MemberRepository memberRepo;
     private final DepartmentRepository departmentRepo;
     private final HashPassword hashPassword;
+    private final LeadRepository leadRepository;
 
     @Transactional
     public List<MemberCredentialsDto> bulkImportMembers(BulkMemberImportDto dto) {
@@ -96,5 +101,41 @@ public class UserService {
             password.append(alphaNumeric.charAt(pwd.nextInt(alphaNumeric.length())));
         return password.toString();
     }
-}
 
+    @Transactional
+    public void promoteToLead(String memberId) throws NoSuchElementException {
+        Member member = memberRepo.findById(memberId)
+                .orElseThrow(() -> new NoSuchElementException("Member not found!"));
+
+        Lead promotedMember = new Lead();
+        promotedMember.setUserId(member.getUserId());
+        promotedMember.setName(member.getName());
+        promotedMember.setEmail(member.getEmail());
+        promotedMember.setMustChangePassword(member.getMustChangePassword());
+        promotedMember.setPasswordHash(member.getPasswordHash());
+        promotedMember.setRegisterNumber(member.getRegisterNumber());
+        promotedMember.setCreatedAt(LocalDateTime.now());
+
+        promotedMember.setRole(Roles.LEAD);
+
+        Department dept = departmentRepo.findById(member.getDept().getDepartmentId())
+                .orElseThrow(() -> new NoSuchElementException("No such Department"));
+        Lead currentLead = dept.getDeptLead();
+        Member demotedMember = new Member();
+        demotedMember.setUserId(currentLead.getUserId());
+        demotedMember.setName(currentLead.getName());
+        demotedMember.setEmail(currentLead.getEmail());
+        demotedMember.setMustChangePassword(currentLead.getMustChangePassword());
+        demotedMember.setPasswordHash(currentLead.getPasswordHash());
+        demotedMember.setDept(dept);
+        demotedMember.setTokensAvailable(30);
+        demotedMember.setCumulativePoints(0);
+        demotedMember.setRegisterNumber(currentLead.getRegisterNumber());
+        demotedMember.setCreatedAt(LocalDateTime.now());
+
+        leadRepository.deleteById(currentLead.getUserId());
+        leadRepository.save(promotedMember);
+        memberRepo.deleteById(member.getUserId());
+        memberRepo.save(demotedMember);
+    }
+}
