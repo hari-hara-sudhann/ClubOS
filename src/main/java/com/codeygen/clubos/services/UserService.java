@@ -1,8 +1,8 @@
 package com.codeygen.clubos.services;
 
-import com.codeygen.clubos.dtos.BulkMemberImportDto;
-import com.codeygen.clubos.dtos.MemberCredentialsDto;
-import com.codeygen.clubos.dtos.MemberImportDto;
+import com.codeygen.clubos.dtos.userservice.BulkMemberImportDto;
+import com.codeygen.clubos.dtos.userservice.MemberCredentialsDto;
+import com.codeygen.clubos.dtos.userservice.MemberImportDto;
 import com.codeygen.clubos.entities.Department;
 import com.codeygen.clubos.entities.user.Lead;
 import com.codeygen.clubos.entities.user.Member;
@@ -21,7 +21,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service

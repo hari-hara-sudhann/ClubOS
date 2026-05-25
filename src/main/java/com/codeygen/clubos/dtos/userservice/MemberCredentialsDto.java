@@ -1,4 +1,4 @@
-package com.codeygen.clubos.dtos;
+package com.codeygen.clubos.dtos.userservice;
 
 import lombok.Data;
 
