@@ -1,5 +1,6 @@
 package com.codeygen.clubos.entities;
 
+import com.codeygen.clubos.entities.tasks.enums.OwnershipAcquisitionType;
 import com.codeygen.clubos.entities.tasks.OwnershipBasedTask;
 import com.codeygen.clubos.entities.user.Member;
 import jakarta.persistence.*;
@@ -17,15 +18,20 @@ public class TaskOwnership {
     private String taskOwnershipId;
 
     private LocalDateTime ownershipAssignedAt;
+    private Integer assignedPoints;
+
+    @Enumerated(EnumType.STRING)
+    private OwnershipAcquisitionType acquisitionType;
+
     @ManyToOne
     @JoinColumn(name="transferred_to_user_id")
     private Member ownershipTransferredTo;
 
     @ManyToOne
     @JoinColumn(name="task_id")
-    public OwnershipBasedTask task;
+    private OwnershipBasedTask task;
 
     @ManyToOne
     @JoinColumn(name="owner_user_id")
-    public Member owner;
+    private Member owner;
 }

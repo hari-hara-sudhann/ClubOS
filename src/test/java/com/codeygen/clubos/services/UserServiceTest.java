@@ -1,8 +1,8 @@
 package com.codeygen.clubos.services;
 
-import com.codeygen.clubos.dtos.BulkMemberImportDto;
-import com.codeygen.clubos.dtos.MemberCredentialsDto;
-import com.codeygen.clubos.dtos.MemberImportDto;
+import com.codeygen.clubos.dtos.userservice.BulkMemberImportDto;
+import com.codeygen.clubos.dtos.userservice.MemberCredentialsDto;
+import com.codeygen.clubos.dtos.userservice.MemberImportDto;
 import com.codeygen.clubos.entities.Department;
 import com.codeygen.clubos.entities.user.Lead;
 import com.codeygen.clubos.entities.user.Member;
@@ -45,6 +45,9 @@ class UserServiceTest {
 
     @Mock
     private HashPassword hashPassword;
+
+    @Mock
+    private MemberProgressService memberProgressService;
 
     @InjectMocks
     private UserService userService;

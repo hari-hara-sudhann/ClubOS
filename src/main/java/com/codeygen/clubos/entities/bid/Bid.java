@@ -23,5 +23,6 @@ public class Bid {
 
     private Integer tokensBidded;
 
+    @Enumerated(EnumType.STRING)
     private BidStatus status;
 }
