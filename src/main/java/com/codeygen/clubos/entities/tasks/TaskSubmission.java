@@ -25,5 +25,8 @@ public class TaskSubmission {
     private Task task;
     private String proofOfSubmission;
     private LocalDateTime submittedAt;
+
+    @Enumerated(EnumType.STRING)
     private SubmissionStatus status = SubmissionStatus.SUBMITTED;
+    private String remarksByLead;
 }

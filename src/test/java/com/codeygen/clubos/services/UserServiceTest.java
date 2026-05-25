@@ -46,6 +46,9 @@ class UserServiceTest {
     @Mock
     private HashPassword hashPassword;
 
+    @Mock
+    private MemberProgressService memberProgressService;
+
     @InjectMocks
     private UserService userService;
 

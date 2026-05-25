@@ -29,6 +29,7 @@ public class User {
 
     private LocalDateTime createdAt;
 
+    @Enumerated(EnumType.STRING)
     private Roles role;
 
     private Boolean mustChangePassword = true;

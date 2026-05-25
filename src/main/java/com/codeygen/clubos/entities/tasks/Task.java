@@ -21,9 +21,10 @@ public class Task {
 
     private LocalDateTime taskDeadline;
 
+    @Enumerated(EnumType.STRING)
     private TaskTypes taskType;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name="department_id")
     private Department dept;
 }

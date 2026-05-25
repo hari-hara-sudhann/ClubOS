@@ -30,6 +30,7 @@ public class UserService {
     private final DepartmentRepository departmentRepo;
     private final HashPassword hashPassword;
     private final LeadRepository leadRepository;
+    private final MemberProgressService memberProgressService;
 
     @Transactional
     public List<MemberCredentialsDto> bulkImportMembers(BulkMemberImportDto dto) {
@@ -150,5 +151,6 @@ public class UserService {
 
         member.setDept(toDepartment);
         memberRepo.save(member);
+        memberProgressService.updateStatusForMember(member.getUserId());
     }
 }
