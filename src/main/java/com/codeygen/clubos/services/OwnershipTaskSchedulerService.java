@@ -6,9 +6,11 @@ import com.codeygen.clubos.entities.bid.enums.BidStatus;
 import com.codeygen.clubos.entities.tasks.OwnershipBasedTask;
 import com.codeygen.clubos.entities.tasks.enums.OwnershipAcquisitionType;
 import com.codeygen.clubos.entities.tasks.enums.OwnershipAssignmentStatus;
+import com.codeygen.clubos.entities.user.Member;
 import com.codeygen.clubos.repositories.BidRepository;
 import com.codeygen.clubos.repositories.task.OwnershipTaskRepository;
 import com.codeygen.clubos.repositories.task.TaskOwnershipRepository;
+import com.codeygen.clubos.repositories.user.MemberRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,6 +26,7 @@ public class OwnershipTaskSchedulerService {
     private final OwnershipTaskRepository ownershipTaskRepository;
     private final BidRepository bidRepository;
     private final TaskOwnershipRepository taskOwnershipRepository;
+    private final MemberRepository memberRepository;
 
     @Scheduled(fixedDelay = 60000)
     @Transactional
@@ -59,6 +62,7 @@ public class OwnershipTaskSchedulerService {
                     ownerships.add(ownership);
                 } else {
                     bid.setStatus(BidStatus.LOST);
+                    refundBidIfNeeded(bid);
                 }
             }
 
@@ -67,5 +71,18 @@ public class OwnershipTaskSchedulerService {
             task.setAssignmentStatus(OwnershipAssignmentStatus.ASSIGNED_BY_BIDDING);
             ownershipTaskRepository.save(task);
         }
+    }
+
+    private void refundBidIfNeeded(Bid bid) {
+        if (Boolean.TRUE.equals(bid.getRefunded())) {
+            return;
+        }
+
+        Member bidder = bid.getMember();
+        int currentTokens = bidder.getTokensAvailable() == null ? 0 : bidder.getTokensAvailable();
+        int tokensToRefund = bid.getTokensBidded() == null ? 0 : bid.getTokensBidded();
+        bidder.setTokensAvailable(currentTokens + tokensToRefund);
+        bid.setRefunded(true);
+        memberRepository.save(bidder);
     }
 }

@@ -22,6 +22,7 @@ public class Bid {
     private Member member;
 
     private Integer tokensBidded;
+    private Boolean refunded = false;
 
     @Enumerated(EnumType.STRING)
     private BidStatus status;

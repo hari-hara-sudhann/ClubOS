@@ -5,6 +5,7 @@ import com.codeygen.clubos.dtos.taskservice.GetSubmissionsDto;
 import com.codeygen.clubos.dtos.taskservice.OwnershipTaskAssignmentDto;
 import com.codeygen.clubos.dtos.taskservice.OwnershipTaskDirectAssignmentDto;
 import com.codeygen.clubos.dtos.taskservice.SubmissionsDto;
+import com.codeygen.clubos.dtos.taskservice.TaskReviewDto;
 import com.codeygen.clubos.entities.TaskOwnership;
 import com.codeygen.clubos.entities.bid.Bid;
 import com.codeygen.clubos.entities.bid.enums.BidStatus;
@@ -149,6 +150,7 @@ public class LeadService {
         List<Bid> bids = bidRepository.findByTask_TaskId(task.getTaskId());
         for (Bid bid : bids) {
             bid.setStatus(BidStatus.LOST);
+            refundBidIfNeeded(bid);
         }
 
         task.setPoints(reducedPoints);
@@ -178,20 +180,24 @@ public class LeadService {
     }
 
     @Transactional
-    public void reviewTask(String taskId, String userId, SubmissionStatus status, String remarks)
+    public void reviewTask(@NonNull TaskReviewDto dto)
     throws IllegalStateException {
+        SubmissionStatus status = dto.getStatus();
         if (status == null || status == SubmissionStatus.SUBMITTED) {
             throw new IllegalArgumentException("Review status must be APPROVED or REJECTED.");
         }
 
-        TaskSubmission submission = taskSubmissionRepository.findByTask_TaskIdAndMember_UserId(taskId, userId)
+        TaskSubmission submission = taskSubmissionRepository.findByTask_TaskIdAndMember_UserId(
+                        dto.getTaskId(),
+                        dto.getMemberId()
+                )
                 .orElseThrow(() -> new NoSuchElementException("submission not found!"));
 
-        validateOwnershipSubmissionIfNeeded(submission.getTask(), userId, status);
+        validateOwnershipSubmissionIfNeeded(submission.getTask(), dto.getMemberId(), status);
         submission.setStatus(status);
-        submission.setRemarksByLead(remarks);
+        submission.setRemarksByLead(dto.getRemarks());
         taskSubmissionRepository.save(submission);
-        memberProgressService.refreshMemberProgress(userId);
+        memberProgressService.refreshMemberProgress(dto.getMemberId());
     }
 
     private void validateOwnershipSubmissionIfNeeded(Task task, String userId, SubmissionStatus status) {
@@ -209,5 +215,18 @@ public class LeadService {
         if (points == null || points <= 0) {
             throw new IllegalArgumentException("Task points must be positive.");
         }
+    }
+
+    private void refundBidIfNeeded(Bid bid) {
+        if (Boolean.TRUE.equals(bid.getRefunded())) {
+            return;
+        }
+
+        Member bidder = bid.getMember();
+        int currentTokens = bidder.getTokensAvailable() == null ? 0 : bidder.getTokensAvailable();
+        int tokensToRefund = bid.getTokensBidded() == null ? 0 : bid.getTokensBidded();
+        bidder.setTokensAvailable(currentTokens + tokensToRefund);
+        bid.setRefunded(true);
+        memberRepository.save(bidder);
     }
 }
