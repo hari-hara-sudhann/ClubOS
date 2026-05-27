@@ -155,6 +155,18 @@ class UserServiceTest {
     }
 
     @Test
+    void shouldReturnEmptyListWhenMembersListIsNull() {
+        BulkMemberImportDto dto = new BulkMemberImportDto();
+        dto.setDepartmentId("dept-1");
+        dto.setMembers(null);
+
+        List<MemberCredentialsDto> result = userService.bulkImportMembers(dto);
+
+        assertTrue(result.isEmpty());
+        verifyNoInteractions(memberRepo);
+    }
+
+    @Test
     void shouldThrowExceptionWhenDepartmentNotFoundInMember() {
 
         MemberImportDto memberDto = new MemberImportDto();
@@ -210,6 +222,28 @@ class UserServiceTest {
     }
 
     @Test
+    void shouldSkipDuplicateUserWhenRegisterNumberAlreadyExists() {
+        Department department = new Department();
+
+        when(departmentRepo.findById(any())).thenReturn(Optional.of(department));
+        when(userRepo.findByEmail(any())).thenReturn(Optional.empty());
+        when(userRepo.findByRegisterNumber(any())).thenReturn(Optional.of(new Member()));
+
+        MemberImportDto memberDto = new MemberImportDto();
+        memberDto.setEmail("hari@example.com");
+        memberDto.setRegisterNumber("21CS101");
+
+        BulkMemberImportDto bulkDto = new BulkMemberImportDto();
+        bulkDto.setDepartmentId("dept-1");
+        bulkDto.setMembers(List.of(memberDto));
+
+        List<MemberCredentialsDto> result = userService.bulkImportMembers(bulkDto);
+
+        assertTrue(result.isEmpty());
+        verify(memberRepo, never()).save(any());
+    }
+
+    @Test
     void shouldSkipMemberWhenEmailIsNull() {
 
         Department department = new Department();
@@ -235,6 +269,28 @@ class UserServiceTest {
 
         assertTrue(result.isEmpty());
 
+        verify(memberRepo, never()).save(any());
+    }
+
+    @Test
+    void shouldSkipMemberWhenRegisterNumberIsNull() {
+        Department department = new Department();
+
+        when(departmentRepo.findById(any()))
+                .thenReturn(Optional.of(department));
+
+        MemberImportDto memberDto = new MemberImportDto();
+        memberDto.setName("Hari");
+        memberDto.setEmail("hari@example.com");
+        memberDto.setRegisterNumber(null);
+
+        BulkMemberImportDto bulkDto = new BulkMemberImportDto();
+        bulkDto.setDepartmentId("dept-1");
+        bulkDto.setMembers(List.of(memberDto));
+
+        List<MemberCredentialsDto> result = userService.bulkImportMembers(bulkDto);
+
+        assertTrue(result.isEmpty());
         verify(memberRepo, never()).save(any());
     }
 
@@ -337,6 +393,19 @@ class UserServiceTest {
         verifyNoInteractions(leadRepository);
     }
 
+    @Test
+    void shouldThrowExceptionWhenDepartmentNotFoundDuringPromotion() {
+        Member member = new Member();
+        Department department = new Department();
+        department.setDepartmentId("dept-1");
+        member.setDept(department);
+
+        when(memberRepo.findById("member-1")).thenReturn(Optional.of(member));
+        when(departmentRepo.findById("dept-1")).thenReturn(Optional.empty());
+
+        assertThrows(NoSuchElementException.class, () -> userService.promoteToLead("member-1"));
+    }
+
 
     @Test
     void shouldCreateDemotedMemberFromCurrentLead() {
@@ -419,6 +488,7 @@ class UserServiceTest {
 
         verify(memberRepo, times(1))
                 .save(member);
+        verify(memberProgressService).updateStatusForMember("member-1");
     }
 
     @Test

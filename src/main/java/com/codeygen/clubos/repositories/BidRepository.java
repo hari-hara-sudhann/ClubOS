@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface BidRepository extends JpaRepository<Bid, String> {
     @Query("""
@@ -20,4 +21,6 @@ public interface BidRepository extends JpaRepository<Bid, String> {
     List<Bid> findByTask_TaskId(String taskId);
 
     boolean existsByTask_TaskIdAndMember_UserId(String taskId, String userId);
+
+    Optional<Bid> findByTask_TaskIdAndMember_UserId(String taskId, String userId);
 }
