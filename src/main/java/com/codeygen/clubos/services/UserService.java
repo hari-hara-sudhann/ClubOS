@@ -142,7 +142,7 @@ public class UserService {
     }
 
     @Transactional
-    public void changeMemberDepartment(String memberId, String toDepartmentId) throws NoSuchElementException {
+    public void changeMemberDepartment(String memberId, String toDepartmentId) throws NoSuchElementException, IllegalArgumentException {
         // All responsibilities of members in the previous department still holds.
         // New tasks are assigned by the later departments.
         Member member = memberRepo.findById(memberId)
@@ -150,6 +150,8 @@ public class UserService {
 
         Department toDepartment = departmentRepo.findById(toDepartmentId)
                 .orElseThrow(() -> new NoSuchElementException("Department not found"));
+
+        if (member.getDept().equals(toDepartment)) { throw new IllegalArgumentException("Cannot be transferred to the same department"); }
 
         member.setDept(toDepartment);
         memberRepo.save(member);

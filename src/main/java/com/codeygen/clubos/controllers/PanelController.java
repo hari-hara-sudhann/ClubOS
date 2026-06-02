@@ -3,6 +3,8 @@ package com.codeygen.clubos.controllers;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,5 +27,11 @@ public class PanelController {
     @PostMapping("/bulk_onboard")
     public ResponseEntity<List<MemberCredentialsDto>> importMembersInBulk(@RequestBody BulkMemberImportDto dto) {
         return ResponseEntity.ok(userService.bulkImportMembers(dto));
+    }
+
+    @PatchMapping("/member/{id}/change-dept-to/{deptId}")
+    public ResponseEntity<String> changeDept(@PathVariable String id, @PathVariable String deptId) {
+        userService.changeMemberDepartment(id, deptId);
+        return ResponseEntity.ok("Successfully changed department.");
     }
 }
