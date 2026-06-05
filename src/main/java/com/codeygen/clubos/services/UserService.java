@@ -1,11 +1,14 @@
 package com.codeygen.clubos.services;
 
+import com.codeygen.clubos.dtos.loginservice.LoginRequestDto;
+import com.codeygen.clubos.dtos.loginservice.LoginResponseDto;
 import com.codeygen.clubos.dtos.userservice.BulkMemberImportDto;
 import com.codeygen.clubos.dtos.userservice.MemberCredentialsDto;
 import com.codeygen.clubos.dtos.userservice.MemberImportDto;
 import com.codeygen.clubos.entities.Department;
 import com.codeygen.clubos.entities.user.Lead;
 import com.codeygen.clubos.entities.user.Member;
+import com.codeygen.clubos.entities.user.User;
 import com.codeygen.clubos.entities.user.enums.Roles;
 import com.codeygen.clubos.repositories.DepartmentRepository;
 import com.codeygen.clubos.repositories.user.LeadRepository;
@@ -13,6 +16,7 @@ import com.codeygen.clubos.repositories.user.MemberRepository;
 import com.codeygen.clubos.repositories.user.UserRepository;
 import com.codeygen.clubos.utils.HashPassword;
 import jakarta.transaction.Transactional;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -68,7 +72,6 @@ public class UserService {
             Member member = new Member();
             member.setDept(dept);
 
-
             member.setRegisterNumber(registerNumber);
             member.setEmail(email);
             member.setName(name);
@@ -79,7 +82,6 @@ public class UserService {
             member.setMustChangePassword(true);
             member.setTokensAvailable(30);
             member.setCumulativePoints(0);
-
 
             memberRepo.save(member);
 
@@ -140,7 +142,7 @@ public class UserService {
     }
 
     @Transactional
-    public void changeMemberDepartment(String memberId, String toDepartmentId) throws NoSuchElementException {
+    public void changeMemberDepartment(String memberId, String toDepartmentId) throws NoSuchElementException, IllegalArgumentException {
         // All responsibilities of members in the previous department still holds.
         // New tasks are assigned by the later departments.
         Member member = memberRepo.findById(memberId)
@@ -149,8 +151,23 @@ public class UserService {
         Department toDepartment = departmentRepo.findById(toDepartmentId)
                 .orElseThrow(() -> new NoSuchElementException("Department not found"));
 
+        if (member.getDept().equals(toDepartment)) { throw new IllegalArgumentException("Cannot be transferred to the same department"); }
+
         member.setDept(toDepartment);
         memberRepo.save(member);
         memberProgressService.updateStatusForMember(member.getUserId());
+    }
+
+    public LoginResponseDto userLogin(@NonNull LoginRequestDto dto) {
+        User user = userRepo.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new NoSuchElementException("User not found!"));
+        boolean correctCredentials = hashPassword.verifyPassword(dto.getRawPassword(), user.getPasswordHash());
+
+        if (!correctCredentials) throw new NoSuchElementException("Invalid Password");
+
+        LoginResponseDto response = new LoginResponseDto();
+        response.setJwt("eyJthisisasamplejwt");
+        response.setRole(user.getRole());
+        return response;
     }
 }
