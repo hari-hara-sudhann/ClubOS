@@ -5,7 +5,6 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,15 +20,17 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("ClubOS API")
-                        .description("ClubOS backend API documentation")
+                        .description(
+                                "OpenAPI documentation for the ClubOS backend. " +
+                                "This API models governance-heavy workflows around member onboarding, task assignment, bidding, ownership, and submission review. " +
+                                "Authentication is still under development, so some endpoints are documented ahead of full auth enforcement."
+                        )
                         .version("1.0.0")
                         .contact(new Contact()
-                                .name("CodeyGen"))
+                                .name("CodeyGen")
+                                .email("support@codeygen.dev"))
                         .license(new License()
                                 .name("MIT License")))
-
-                .addSecurityItem(new SecurityRequirement()
-                        .addList(securitySchemeName))
 
                 .components(new Components()
                         .addSecuritySchemes(securitySchemeName,
@@ -37,6 +38,7 @@ public class OpenApiConfig {
                                         .name(securitySchemeName)
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
-                                        .bearerFormat("JWT")));
+                                        .bearerFormat("JWT")
+                                        .description("Bearer token scheme reserved for the upcoming authentication module.")));
     }
 }
