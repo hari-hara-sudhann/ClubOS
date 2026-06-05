@@ -49,6 +49,9 @@ class UserServiceTest {
     @Mock
     private MemberProgressService memberProgressService;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     @InjectMocks
     private UserService userService;
 
@@ -124,6 +127,8 @@ class UserServiceTest {
 
         assertEquals(department,
                 savedMember.getDept());
+
+        verify(auditLogService).recordAction(any());
     }
 
     @Test

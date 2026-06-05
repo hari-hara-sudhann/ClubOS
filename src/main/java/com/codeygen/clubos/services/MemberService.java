@@ -1,7 +1,9 @@
 package com.codeygen.clubos.services;
 
+import com.codeygen.clubos.dtos.auditservice.AuditLogRequestDto;
 import com.codeygen.clubos.dtos.memberservice.BidPlacementDto;
 import com.codeygen.clubos.dtos.memberservice.TaskSubmissionDto;
+import com.codeygen.clubos.entities.audit.enums.AuditActionType;
 import com.codeygen.clubos.entities.bid.Bid;
 import com.codeygen.clubos.entities.bid.enums.BidStatus;
 import com.codeygen.clubos.entities.tasks.OwnershipBasedTask;
@@ -35,6 +37,7 @@ public class MemberService {
     private final TaskSubmissionRepository taskSubmissionRepository;
     private final TaskOwnershipRepository taskOwnershipRepository;
     private final BidRepository bidRepository;
+    private final AuditLogService auditLogService;
 
     public int getRemainingTokensForBidding(String memberId) {
         Member member = memberRepository.findById(memberId)
@@ -68,6 +71,18 @@ public class MemberService {
         submission.setRemarksByLead(null);
 
         taskSubmissionRepository.save(submission);
+
+        AuditLogRequestDto audit = new AuditLogRequestDto();
+        audit.setActionType(AuditActionType.TASK_SUBMITTED);
+        audit.setActorUserId(member.getUserId());
+        audit.setActorName(member.getName());
+        audit.setActorRole(member.getRole() == null ? "MEMBER" : member.getRole().name());
+        audit.setDepartmentId(member.getDept() == null ? null : member.getDept().getDepartmentId());
+        audit.setTargetType("TASK");
+        audit.setTargetId(task.getTaskId());
+        audit.setSummary("Member " + member.getUserId() + " submitted work for task " + task.getTaskId() + ".");
+        audit.setDetails("Proof of submission: " + dto.getProofOfSubmission() + ".");
+        auditLogService.recordAction(audit);
     }
 
     @Transactional
@@ -91,6 +106,18 @@ public class MemberService {
 
         memberRepository.save(member);
         bidRepository.save(bid);
+
+        AuditLogRequestDto audit = new AuditLogRequestDto();
+        audit.setActionType(AuditActionType.OWNERSHIP_BID_PLACED);
+        audit.setActorUserId(member.getUserId());
+        audit.setActorName(member.getName());
+        audit.setActorRole(member.getRole() == null ? "MEMBER" : member.getRole().name());
+        audit.setDepartmentId(member.getDept() == null ? null : member.getDept().getDepartmentId());
+        audit.setTargetType("OWNERSHIP_TASK");
+        audit.setTargetId(task.getTaskId());
+        audit.setSummary("Member " + member.getUserId() + " placed a bid on ownership task " + task.getTaskId() + ".");
+        audit.setDetails("Tokens bidded: " + dto.getTokensBidded() + ", remaining tokens after bid: " + member.getTokensAvailable() + ".");
+        auditLogService.recordAction(audit);
     }
 
     @Transactional
@@ -115,6 +142,18 @@ public class MemberService {
 
         memberRepository.save(member);
         bidRepository.save(existingBid);
+
+        AuditLogRequestDto audit = new AuditLogRequestDto();
+        audit.setActionType(AuditActionType.OWNERSHIP_BID_UPDATED);
+        audit.setActorUserId(member.getUserId());
+        audit.setActorName(member.getName());
+        audit.setActorRole(member.getRole() == null ? "MEMBER" : member.getRole().name());
+        audit.setDepartmentId(member.getDept() == null ? null : member.getDept().getDepartmentId());
+        audit.setTargetType("OWNERSHIP_TASK");
+        audit.setTargetId(task.getTaskId());
+        audit.setSummary("Member " + member.getUserId() + " updated a bid on ownership task " + task.getTaskId() + ".");
+        audit.setDetails("Previous bid: " + previousBid + ", updated bid: " + dto.getTokensBidded() + ", remaining tokens after update: " + member.getTokensAvailable() + ".");
+        auditLogService.recordAction(audit);
     }
 
     private void validateSubmission(TaskSubmissionDto dto) {

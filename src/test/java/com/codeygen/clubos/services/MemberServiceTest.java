@@ -56,6 +56,9 @@ class MemberServiceTest {
     @Mock
     private BidRepository bidRepository;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     @InjectMocks
     private MemberService memberService;
 
@@ -118,6 +121,7 @@ class MemberServiceTest {
         assertEquals("https://proof", existingSubmission.getProofOfSubmission());
         assertNull(existingSubmission.getRemarksByLead());
         verify(taskSubmissionRepository).save(existingSubmission);
+        verify(auditLogService).recordAction(any());
     }
 
     @Test
@@ -144,6 +148,7 @@ class MemberServiceTest {
         ArgumentCaptor<TaskSubmission> submissionCaptor = ArgumentCaptor.forClass(TaskSubmission.class);
         verify(taskSubmissionRepository).save(submissionCaptor.capture());
         assertEquals(SubmissionStatus.SUBMITTED, submissionCaptor.getValue().getStatus());
+        verify(auditLogService).recordAction(any());
     }
 
     @Test
@@ -274,6 +279,7 @@ class MemberServiceTest {
         memberService.submitTask(dto);
 
         verify(taskSubmissionRepository).save(any(TaskSubmission.class));
+        verify(auditLogService).recordAction(any());
     }
 
     @Test
@@ -334,6 +340,7 @@ class MemberServiceTest {
         assertEquals(task, savedBid.getTask());
         assertEquals(12, savedBid.getTokensBidded());
         assertEquals(BidStatus.PENDING, savedBid.getStatus());
+        verify(auditLogService).recordAction(any());
     }
 
     @Test
@@ -629,6 +636,7 @@ class MemberServiceTest {
 
         assertEquals(14, existingBid.getTokensBidded());
         assertEquals(4, member.getTokensAvailable());
+        verify(auditLogService).recordAction(any());
     }
 
     @Test
@@ -663,6 +671,7 @@ class MemberServiceTest {
 
         assertEquals(11, member.getTokensAvailable());
         assertEquals(4, existingBid.getTokensBidded());
+        verify(auditLogService).recordAction(any());
     }
 
     @Test

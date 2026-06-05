@@ -42,6 +42,9 @@ class OwnershipTaskSchedulerServiceTest {
     @Mock
     private MemberRepository memberRepository;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     @InjectMocks
     private OwnershipTaskSchedulerService ownershipTaskSchedulerService;
 
@@ -102,6 +105,7 @@ class OwnershipTaskSchedulerServiceTest {
         assertTrue(savedOwnerships.stream().allMatch(
                 ownership -> ownership.getAcquisitionType() == OwnershipAcquisitionType.BID
         ));
+        verify(auditLogService).recordAction(any());
     }
 
     @Test
@@ -122,6 +126,7 @@ class OwnershipTaskSchedulerServiceTest {
         assertEquals(OwnershipAssignmentStatus.NO_VALID_BIDS, task.getAssignmentStatus());
         verify(ownershipTaskRepository).save(task);
         verify(taskOwnershipRepository, never()).saveAll(any());
+        verify(auditLogService).recordAction(any());
     }
 
     @Test
