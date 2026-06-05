@@ -1,5 +1,6 @@
 package com.codeygen.clubos.services;
 
+import com.codeygen.clubos.dtos.auditservice.AuditLogRequestDto;
 import com.codeygen.clubos.dtos.taskservice.GeneralTaskAssignmentDto;
 import com.codeygen.clubos.dtos.taskservice.GetSubmissionsDto;
 import com.codeygen.clubos.dtos.taskservice.OwnershipTaskAssignmentDto;
@@ -7,6 +8,7 @@ import com.codeygen.clubos.dtos.taskservice.OwnershipTaskDirectAssignmentDto;
 import com.codeygen.clubos.dtos.taskservice.SubmissionsDto;
 import com.codeygen.clubos.dtos.taskservice.TaskReviewDto;
 import com.codeygen.clubos.entities.TaskOwnership;
+import com.codeygen.clubos.entities.audit.enums.AuditActionType;
 import com.codeygen.clubos.entities.bid.Bid;
 import com.codeygen.clubos.entities.bid.enums.BidStatus;
 import com.codeygen.clubos.entities.Department;
@@ -50,6 +52,7 @@ public class LeadService {
     private final MemberRepository memberRepository;
     private final BidRepository bidRepository;
     private final MemberProgressService memberProgressService;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public void assignGeneralTask(@NonNull GeneralTaskAssignmentDto dto) {
@@ -65,6 +68,17 @@ public class LeadService {
         task.setDept(dept);
         taskRepository.save(task);
         memberProgressService.updateStatusesForDepartment(dept.getDepartmentId());
+
+        AuditLogRequestDto audit = new AuditLogRequestDto();
+        audit.setActionType(AuditActionType.GENERAL_TASK_ASSIGNED);
+        audit.setActorName("LEAD_API_CALLER");
+        audit.setActorRole("LEAD");
+        audit.setDepartmentId(dept.getDepartmentId());
+        audit.setTargetType("TASK");
+        audit.setTargetId(task.getTaskId());
+        audit.setSummary("Lead assigned general task " + task.getName() + " in department " + dept.getDepartmentId() + ".");
+        audit.setDetails("Points: " + task.getPoints() + ", deadline: " + task.getTaskDeadline() + ".");
+        auditLogService.recordAction(audit);
     }
 
     @Transactional
@@ -98,6 +112,17 @@ public class LeadService {
 
         ownershipTaskRepository.save(task);
         memberProgressService.updateStatusesForDepartment(dept.getDepartmentId());
+
+        AuditLogRequestDto audit = new AuditLogRequestDto();
+        audit.setActionType(AuditActionType.OWNERSHIP_TASK_ASSIGNED);
+        audit.setActorName("LEAD_API_CALLER");
+        audit.setActorRole("LEAD");
+        audit.setDepartmentId(dept.getDepartmentId());
+        audit.setTargetType("TASK");
+        audit.setTargetId(task.getTaskId());
+        audit.setSummary("Lead assigned ownership-based task " + task.getName() + " in department " + dept.getDepartmentId() + ".");
+        audit.setDetails("Points: " + task.getPoints() + ", owners needed: " + task.getNumberOfOwners() + ", bidding deadline: " + task.getBiddingDeadline() + ".");
+        auditLogService.recordAction(audit);
     }
 
     @Transactional
@@ -160,6 +185,17 @@ public class LeadService {
         bidRepository.saveAll(bids);
         ownershipTaskRepository.save(task);
         memberProgressService.updateStatusesForDepartment(task.getDept().getDepartmentId());
+
+        AuditLogRequestDto audit = new AuditLogRequestDto();
+        audit.setActionType(AuditActionType.OWNERSHIP_TASK_DIRECTLY_ASSIGNED);
+        audit.setActorName("LEAD_API_CALLER");
+        audit.setActorRole("LEAD");
+        audit.setDepartmentId(task.getDept().getDepartmentId());
+        audit.setTargetType("TASK");
+        audit.setTargetId(task.getTaskId());
+        audit.setSummary("Lead directly assigned owners for ownership task " + task.getTaskId() + ".");
+        audit.setDetails("Assigned owners: " + ownerIds + ", reduced points: " + reducedPoints + ".");
+        auditLogService.recordAction(audit);
     }
 
     public GetSubmissionsDto getSubmissions(String taskId) {
@@ -198,6 +234,17 @@ public class LeadService {
         submission.setRemarksByLead(dto.getRemarks());
         taskSubmissionRepository.save(submission);
         memberProgressService.refreshMemberProgress(dto.getMemberId());
+
+        AuditLogRequestDto audit = new AuditLogRequestDto();
+        audit.setActionType(AuditActionType.TASK_SUBMISSION_REVIEWED);
+        audit.setActorName("LEAD_API_CALLER");
+        audit.setActorRole("LEAD");
+        audit.setDepartmentId(submission.getTask().getDept() == null ? null : submission.getTask().getDept().getDepartmentId());
+        audit.setTargetType("TASK_SUBMISSION");
+        audit.setTargetId(submission.getSubmissionId());
+        audit.setSummary("Lead reviewed submission for task " + dto.getTaskId() + " by member " + dto.getMemberId() + " as " + status + ".");
+        audit.setDetails("Remarks: " + dto.getRemarks() + ".");
+        auditLogService.recordAction(audit);
     }
 
     private void validateOwnershipSubmissionIfNeeded(Task task, String userId, SubmissionStatus status) {

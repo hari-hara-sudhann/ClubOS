@@ -1,6 +1,8 @@
 package com.codeygen.clubos.services;
 
+import com.codeygen.clubos.dtos.auditservice.AuditLogRequestDto;
 import com.codeygen.clubos.entities.TaskOwnership;
+import com.codeygen.clubos.entities.audit.enums.AuditActionType;
 import com.codeygen.clubos.entities.bid.Bid;
 import com.codeygen.clubos.entities.bid.enums.BidStatus;
 import com.codeygen.clubos.entities.tasks.OwnershipBasedTask;
@@ -27,6 +29,7 @@ public class OwnershipTaskSchedulerService {
     private final BidRepository bidRepository;
     private final TaskOwnershipRepository taskOwnershipRepository;
     private final MemberRepository memberRepository;
+    private final AuditLogService auditLogService;
 
     @Scheduled(fixedDelay = 60000)
     @Transactional
@@ -43,6 +46,16 @@ public class OwnershipTaskSchedulerService {
             if (rankedBids.isEmpty()) {
                 task.setAssignmentStatus(OwnershipAssignmentStatus.NO_VALID_BIDS);
                 ownershipTaskRepository.save(task);
+                AuditLogRequestDto audit = new AuditLogRequestDto();
+                audit.setActionType(AuditActionType.OWNERSHIP_BIDDING_CLOSED_WITHOUT_VALID_BIDS);
+                audit.setActorName("OWNERSHIP_BIDDING_SCHEDULER");
+                audit.setActorRole("SYSTEM");
+                audit.setDepartmentId(task.getDept() == null ? null : task.getDept().getDepartmentId());
+                audit.setTargetType("OWNERSHIP_TASK");
+                audit.setTargetId(task.getTaskId());
+                audit.setSummary("System closed ownership bidding for task " + task.getTaskId() + " with no valid bids.");
+                audit.setDetails("Assignment status moved to NO_VALID_BIDS.");
+                auditLogService.recordAction(audit);
                 continue;
             }
 
@@ -70,6 +83,17 @@ public class OwnershipTaskSchedulerService {
             bidRepository.saveAll(rankedBids);
             task.setAssignmentStatus(OwnershipAssignmentStatus.ASSIGNED_BY_BIDDING);
             ownershipTaskRepository.save(task);
+
+            AuditLogRequestDto audit = new AuditLogRequestDto();
+            audit.setActionType(AuditActionType.OWNERSHIP_BIDDING_AUTO_ASSIGNED);
+            audit.setActorName("OWNERSHIP_BIDDING_SCHEDULER");
+            audit.setActorRole("SYSTEM");
+            audit.setDepartmentId(task.getDept() == null ? null : task.getDept().getDepartmentId());
+            audit.setTargetType("OWNERSHIP_TASK");
+            audit.setTargetId(task.getTaskId());
+            audit.setSummary("System resolved bidding for ownership task " + task.getTaskId() + ".");
+            audit.setDetails("Owners selected: " + ownerLimit + ", total bids considered: " + rankedBids.size() + ".");
+            auditLogService.recordAction(audit);
         }
     }
 

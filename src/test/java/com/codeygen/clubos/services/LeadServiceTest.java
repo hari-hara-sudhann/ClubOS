@@ -72,6 +72,9 @@ class LeadServiceTest {
     @Mock
     private MemberProgressService memberProgressService;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     @InjectMocks
     private LeadService leadService;
 
@@ -98,6 +101,7 @@ class LeadServiceTest {
         assertEquals(TaskTypes.GENERAL, savedTask.getTaskType());
         assertEquals(department, savedTask.getDept());
         verify(memberProgressService).updateStatusesForDepartment("dept-1");
+        verify(auditLogService).recordAction(any());
     }
 
     @Test
@@ -159,6 +163,7 @@ class LeadServiceTest {
         assertEquals(department, savedTask.getDept());
 
         verify(memberProgressService).updateStatusesForDepartment("dept-1");
+        verify(auditLogService).recordAction(any());
     }
 
     @Test
@@ -284,6 +289,7 @@ class LeadServiceTest {
         assertTrue(bid.getRefunded());
 
         verify(memberProgressService).updateStatusesForDepartment("dept-1");
+        verify(auditLogService).recordAction(any());
     }
 
     @Test
@@ -590,6 +596,7 @@ class LeadServiceTest {
         assertEquals(SubmissionStatus.APPROVED, submission.getStatus());
         assertEquals("Good work", submission.getRemarksByLead());
         verify(memberProgressService).refreshMemberProgress("member-1");
+        verify(auditLogService).recordAction(any());
     }
 
     @Test

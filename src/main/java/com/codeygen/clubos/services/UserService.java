@@ -1,11 +1,13 @@
 package com.codeygen.clubos.services;
 
+import com.codeygen.clubos.dtos.auditservice.AuditLogRequestDto;
 import com.codeygen.clubos.dtos.loginservice.LoginRequestDto;
 import com.codeygen.clubos.dtos.loginservice.LoginResponseDto;
 import com.codeygen.clubos.dtos.userservice.BulkMemberImportDto;
 import com.codeygen.clubos.dtos.userservice.MemberCredentialsDto;
 import com.codeygen.clubos.dtos.userservice.MemberImportDto;
 import com.codeygen.clubos.entities.Department;
+import com.codeygen.clubos.entities.audit.enums.AuditActionType;
 import com.codeygen.clubos.entities.user.Lead;
 import com.codeygen.clubos.entities.user.Member;
 import com.codeygen.clubos.entities.user.User;
@@ -35,6 +37,7 @@ public class UserService {
     private final HashPassword hashPassword;
     private final LeadRepository leadRepository;
     private final MemberProgressService memberProgressService;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public List<MemberCredentialsDto> bulkImportMembers(BulkMemberImportDto dto) {
@@ -92,6 +95,17 @@ public class UserService {
             created.add(credentialsDto);
         }
 
+        AuditLogRequestDto audit = new AuditLogRequestDto();
+        audit.setActionType(AuditActionType.MEMBERS_BULK_IMPORTED);
+        audit.setActorName("PANEL_API_CALLER");
+        audit.setActorRole("PANEL");
+        audit.setDepartmentId(dept.getDepartmentId());
+        audit.setTargetType("MEMBER_BATCH");
+        audit.setTargetId(dept.getDepartmentId());
+        audit.setSummary("Panel bulk-imported " + created.size() + " members into department " + dept.getDepartmentId() + ".");
+        audit.setDetails("Requested members: " + dto.getMembers().size() + ", created members: " + created.size() + ".");
+        auditLogService.recordAction(audit);
+
         return created;
     }
 
@@ -139,6 +153,17 @@ public class UserService {
         leadRepository.save(promotedMember);
         memberRepo.deleteById(member.getUserId());
         memberRepo.save(demotedMember);
+
+        AuditLogRequestDto audit = new AuditLogRequestDto();
+        audit.setActionType(AuditActionType.MEMBER_PROMOTED_TO_LEAD);
+        audit.setActorName("PANEL_API_CALLER");
+        audit.setActorRole("PANEL");
+        audit.setDepartmentId(dept.getDepartmentId());
+        audit.setTargetType("MEMBER");
+        audit.setTargetId(member.getUserId());
+        audit.setSummary("Panel promoted member " + member.getUserId() + " to lead for department " + dept.getDepartmentId() + ".");
+        audit.setDetails("Previous lead " + currentLead.getUserId() + " was demoted to member.");
+        auditLogService.recordAction(audit);
     }
 
     @Transactional
@@ -147,15 +172,29 @@ public class UserService {
         // New tasks are assigned by the later departments.
         Member member = memberRepo.findById(memberId)
                 .orElseThrow(() -> new NoSuchElementException("Member not found!"));
+        String fromDepartmentId = member.getDept() == null ? null : member.getDept().getDepartmentId();
 
         Department toDepartment = departmentRepo.findById(toDepartmentId)
                 .orElseThrow(() -> new NoSuchElementException("Department not found"));
 
-        if (member.getDept().equals(toDepartment)) { throw new IllegalArgumentException("Cannot be transferred to the same department"); }
+        if (member.getDept() != null && member.getDept().equals(toDepartment)) {
+            throw new IllegalArgumentException("Cannot be transferred to the same department");
+        }
 
         member.setDept(toDepartment);
         memberRepo.save(member);
         memberProgressService.updateStatusForMember(member.getUserId());
+
+        AuditLogRequestDto audit = new AuditLogRequestDto();
+        audit.setActionType(AuditActionType.MEMBER_DEPARTMENT_CHANGED);
+        audit.setActorName("PANEL_API_CALLER");
+        audit.setActorRole("PANEL");
+        audit.setDepartmentId(toDepartment.getDepartmentId());
+        audit.setTargetType("MEMBER");
+        audit.setTargetId(member.getUserId());
+        audit.setSummary("Panel moved member " + member.getUserId() + " from department " + fromDepartmentId + " to " + toDepartment.getDepartmentId() + ".");
+        audit.setDetails("Historical work remains unchanged; future tasks now belong to department " + toDepartment.getDepartmentId() + ".");
+        auditLogService.recordAction(audit);
     }
 
     public LoginResponseDto userLogin(@NonNull LoginRequestDto dto) {
