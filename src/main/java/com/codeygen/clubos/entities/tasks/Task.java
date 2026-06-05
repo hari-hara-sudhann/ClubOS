@@ -3,14 +3,18 @@ package com.codeygen.clubos.entities.tasks;
 import com.codeygen.clubos.entities.Department;
 import com.codeygen.clubos.entities.tasks.enums.TaskTypes;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table
 @Inheritance(strategy = InheritanceType.JOINED)
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
 public class Task {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

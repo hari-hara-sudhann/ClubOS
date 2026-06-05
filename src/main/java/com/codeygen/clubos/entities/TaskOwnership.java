@@ -4,13 +4,15 @@ import com.codeygen.clubos.entities.tasks.enums.OwnershipAcquisitionType;
 import com.codeygen.clubos.entities.tasks.OwnershipBasedTask;
 import com.codeygen.clubos.entities.user.Member;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 public class TaskOwnership {
     @Id

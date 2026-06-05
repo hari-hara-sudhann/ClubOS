@@ -5,13 +5,16 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Entity;
 import jakarta.persistence.PrimaryKeyJoinColumn;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-
 @Entity
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
 @PrimaryKeyJoinColumn(name="task_id")
 public class OwnershipBasedTask extends Task {
     private LocalDateTime biddingDeadline;

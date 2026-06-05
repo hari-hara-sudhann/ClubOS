@@ -2,13 +2,15 @@ package com.codeygen.clubos.entities.user;
 
 import com.codeygen.clubos.entities.user.enums.Roles;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @Inheritance(strategy = InheritanceType.JOINED)
 @Table(name="users")
