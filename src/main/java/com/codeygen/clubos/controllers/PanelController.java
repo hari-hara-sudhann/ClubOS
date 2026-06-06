@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -52,7 +53,7 @@ public class PanelController {
             )
     })
     @PostMapping("/members/bulk-onboard")
-    public ResponseEntity<List<MemberCredentialsDto>> importMembersInBulk(@RequestBody BulkMemberImportDto dto) {
+    public ResponseEntity<List<MemberCredentialsDto>> importMembersInBulk(@Valid @RequestBody BulkMemberImportDto dto) {
         return ResponseEntity.ok(userService.bulkImportMembers(dto));
     }
 
