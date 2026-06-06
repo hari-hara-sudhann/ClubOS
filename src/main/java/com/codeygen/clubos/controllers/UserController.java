@@ -1,29 +1,26 @@
 package com.codeygen.clubos.controllers;
 
-import com.codeygen.clubos.dtos.common.ApiErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import com.codeygen.clubos.dtos.userservice.UserDto;
+import com.codeygen.clubos.entities.user.User;
 import com.codeygen.clubos.dtos.loginservice.LoginRequestDto;
 import com.codeygen.clubos.dtos.loginservice.LoginResponseDto;
 import com.codeygen.clubos.services.UserService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/api/users")
 @Tag(
-        name = "General User APIs",
-        description = "Shared endpoints not tied to a single governance role. Authentication is still a placeholder and will later move into dedicated auth controllers."
+        name = "User Administration (Internal)",
+        description = "Administrative endpoints for user management. WARNING: These endpoints bypass governance workflows (like panel onboarding) and expose raw entities. Use for data correction only."
 )
 @RequiredArgsConstructor
 public class UserController {
@@ -31,19 +28,55 @@ public class UserController {
     private final UserService userService;
 
     @Operation(
-            summary = "Prototype login endpoint",
-            description = "Temporary login endpoint used before the dedicated authentication module is introduced."
+            summary = "User login (Placeholder)",
+            description = "Authenticates a user and returns a token. This is a temporary implementation."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Login request accepted."),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "User was not found or credentials were rejected by the current placeholder implementation.",
-                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))
-            )
-    })
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto dto) {
+    public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto dto) {
         return ResponseEntity.ok(userService.userLogin(dto));
+    }
+
+    @Operation(
+            summary = "Fetch all users",
+            description = "WARNING: Exposes raw User entities, including password hashes. Use with caution."
+    )
+    @GetMapping
+    public ResponseEntity<List<User>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
+    }
+
+    @Operation(
+            summary = "Fetch user by ID",
+            description = "WARNING: Exposes raw User entity."
+    )
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getUserById(
+            @Parameter(description = "ID of the user to fetch") @PathVariable String id
+    ) {
+        return ResponseEntity.ok(userService.getUserById(id));
+    }
+
+    @Operation(
+            summary = "Update user directly",
+            description = "WARNING: Bypasses governance role/department rules. Exposes User entity."
+    )
+    @PutMapping("/{id}")
+    public ResponseEntity<User> updateUser(
+            @Parameter(description = "ID of the user to update") @PathVariable String id,
+            @Valid @RequestBody UserDto dto
+    ) {
+        return ResponseEntity.ok(userService.updateUser(id, dto));
+    }
+
+    @Operation(
+            summary = "Delete user",
+            description = "Permanently deletes a user record."
+    )
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(
+            @Parameter(description = "ID of the user to delete") @PathVariable String id
+    ) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -12,15 +12,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/member")
@@ -56,7 +51,7 @@ public class MemberController {
             )
     })
     @PostMapping("/tasks/submissions")
-    public ResponseEntity<Void> submitTask(@RequestBody TaskSubmissionDto dto) {
+    public ResponseEntity<Void> submitTask(@Valid @RequestBody TaskSubmissionDto dto) {
         memberService.submitTask(dto);
         return ResponseEntity.ok().build();
     }
@@ -84,7 +79,7 @@ public class MemberController {
             )
     })
     @PostMapping("/ownership-tasks/bids")
-    public ResponseEntity<Void> placeBid(@RequestBody BidPlacementDto dto) {
+    public ResponseEntity<Void> placeBid(@Valid @RequestBody BidPlacementDto dto) {
         memberService.placeBidOnOwnershipBasedTask(dto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -112,7 +107,7 @@ public class MemberController {
             )
     })
     @PatchMapping("/ownership-tasks/bids")
-    public ResponseEntity<Void> updateBid(@RequestBody BidPlacementDto dto) {
+    public ResponseEntity<Void> updateBid(@Valid @RequestBody BidPlacementDto dto) {
         memberService.updateBidOnOwnershipBasedTask(dto);
         return ResponseEntity.ok().build();
     }

@@ -6,10 +6,13 @@ import com.codeygen.clubos.dtos.loginservice.LoginResponseDto;
 import com.codeygen.clubos.dtos.userservice.BulkMemberImportDto;
 import com.codeygen.clubos.dtos.userservice.MemberCredentialsDto;
 import com.codeygen.clubos.dtos.userservice.MemberImportDto;
+import com.codeygen.clubos.dtos.userservice.UserDto;
+import com.codeygen.clubos.dtos.userservice.MemberDto;
 import com.codeygen.clubos.entities.Department;
 import com.codeygen.clubos.entities.audit.enums.AuditActionType;
 import com.codeygen.clubos.entities.user.Lead;
 import com.codeygen.clubos.entities.user.Member;
+import com.codeygen.clubos.entities.user.Panel;
 import com.codeygen.clubos.entities.user.User;
 import com.codeygen.clubos.entities.user.enums.Roles;
 import com.codeygen.clubos.repositories.DepartmentRepository;
@@ -20,6 +23,7 @@ import com.codeygen.clubos.utils.HashPassword;
 import jakarta.transaction.Transactional;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
@@ -30,6 +34,7 @@ import java.util.NoSuchElementException;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class UserService {
     private final UserRepository userRepo;
     private final MemberRepository memberRepo;
@@ -38,6 +43,100 @@ public class UserService {
     private final LeadRepository leadRepository;
     private final MemberProgressService memberProgressService;
     private final AuditLogService auditLogService;
+
+    @Transactional
+    public User createUser(UserDto dto) {
+        log.info("Creating user: {}", dto.getEmail());
+        User user;
+        if (dto.getRole() == Roles.MEMBER) {
+            user = new Member();
+            if (dto instanceof MemberDto memberDto) {
+                ((Member) user).setTokensAvailable(memberDto.getTokensAvailable() != null ? memberDto.getTokensAvailable() : 30);
+                ((Member) user).setCumulativePoints(memberDto.getCumulativePoints() != null ? memberDto.getCumulativePoints() : 0);
+                if (memberDto.getDepartmentId() != null) {
+                    Department dept = departmentRepo.findById(memberDto.getDepartmentId())
+                            .orElseThrow(() -> new NoSuchElementException("Department not found"));
+                    ((Member) user).setDept(dept);
+                }
+            }
+        } else if (dto.getRole() == Roles.LEAD) {
+            user = new Lead();
+        } else if (dto.getRole() == Roles.PANEL) {
+            user = new Panel();
+        } else {
+            user = new User();
+        }
+
+        user.setEmail(dto.getEmail());
+        user.setName(dto.getName());
+        user.setRegisterNumber(dto.getRegisterNumber());
+        user.setRole(dto.getRole());
+        user.setCreatedAt(LocalDateTime.now());
+        user.setMustChangePassword(true);
+        if (dto.getPassword() != null) {
+            user.setPasswordHash(hashPassword.hashPassword(dto.getPassword()));
+        }
+
+        User saved = userRepo.save(user);
+        auditLogService.record(AuditActionType.ENTITY_CREATED, "USER", saved.getUserId(), "Created user: " + saved.getEmail());
+        return saved;
+    }
+
+    public List<User> getAllUsers() {
+        log.info("Fetching all users");
+        List<User> users = userRepo.findAll();
+        auditLogService.record(AuditActionType.ENTITY_READ, "USER", "ALL", "Fetched all users");
+        return users;
+    }
+
+    public User getUserById(String id) {
+        log.info("Fetching user by id: {}", id);
+        User user = userRepo.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("User not found"));
+        auditLogService.record(AuditActionType.ENTITY_READ, "USER", id, "Fetched user: " + user.getEmail());
+        return user;
+    }
+
+    @Transactional
+    public User updateUser(String id, UserDto dto) {
+        log.info("Updating user {}: {}", id, dto.getEmail());
+        User user = userRepo.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("User not found"));
+        
+        user.setEmail(dto.getEmail());
+        user.setName(dto.getName());
+        user.setRegisterNumber(dto.getRegisterNumber());
+        if (dto.getPassword() != null) {
+            user.setPasswordHash(hashPassword.hashPassword(dto.getPassword()));
+        }
+
+        if (user instanceof Member member && dto instanceof MemberDto memberDto) {
+            if (memberDto.getDepartmentId() != null) {
+                Department dept = departmentRepo.findById(memberDto.getDepartmentId())
+                        .orElseThrow(() -> new NoSuchElementException("Department not found"));
+                member.setDept(dept);
+            }
+            if (memberDto.getTokensAvailable() != null) {
+                member.setTokensAvailable(memberDto.getTokensAvailable());
+            }
+            if (memberDto.getCumulativePoints() != null) {
+                member.setCumulativePoints(memberDto.getCumulativePoints());
+            }
+        }
+
+        User updated = userRepo.save(user);
+        auditLogService.record(AuditActionType.ENTITY_UPDATED, "USER", id, "Updated user: " + updated.getEmail());
+        return updated;
+    }
+
+    @Transactional
+    public void deleteUser(String id) {
+        log.info("Deleting user: {}", id);
+        User user = userRepo.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("User not found"));
+        userRepo.delete(user);
+        auditLogService.record(AuditActionType.ENTITY_DELETED, "USER", id, "Deleted user: " + user.getEmail());
+    }
 
     @Transactional
     public List<MemberCredentialsDto> bulkImportMembers(BulkMemberImportDto dto) {

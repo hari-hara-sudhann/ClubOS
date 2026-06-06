@@ -15,15 +15,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/lead")
@@ -53,7 +48,7 @@ public class LeadController {
             )
     })
     @PostMapping("/tasks/general")
-    public ResponseEntity<Void> generalTaskAssignment(@RequestBody GeneralTaskAssignmentDto dto) {
+    public ResponseEntity<Void> generalTaskAssignment(@Valid @RequestBody GeneralTaskAssignmentDto dto) {
         leadService.assignGeneralTask(dto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -76,7 +71,7 @@ public class LeadController {
             )
     })
     @PostMapping("/tasks/ownership-based")
-    public ResponseEntity<Void> ownershipTaskAssignment(@RequestBody OwnershipTaskAssignmentDto dto) {
+    public ResponseEntity<Void> ownershipTaskAssignment(@Valid @RequestBody OwnershipTaskAssignmentDto dto) {
         leadService.assignOwnershipBasedTask(dto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -98,8 +93,7 @@ public class LeadController {
             @Parameter(description = "Unique identifier of the task.", example = "task-123")
             @PathVariable String taskId
     ) {
-        GetSubmissionsDto dto = leadService.getSubmissions(taskId);
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok(leadService.getSubmissions(taskId));
     }
 
     @Operation(
@@ -125,7 +119,7 @@ public class LeadController {
             )
     })
     @PatchMapping("/tasks/submissions/review")
-    public ResponseEntity<Void> reviewTask(@RequestBody TaskReviewDto dto) {
+    public ResponseEntity<Void> reviewTask(@Valid @RequestBody TaskReviewDto dto) {
         leadService.reviewTask(dto);
         return ResponseEntity.ok().build();
     }
@@ -153,7 +147,7 @@ public class LeadController {
             )
     })
     @PatchMapping("/tasks/ownership-based/direct-owner-assignment")
-    public ResponseEntity<Void> assignOwnersDirectly(@RequestBody OwnershipTaskDirectAssignmentDto dto) {
+    public ResponseEntity<Void> assignOwnersDirectly(@Valid @RequestBody OwnershipTaskDirectAssignmentDto dto) {
         leadService.assignOwnersDirectly(dto);
         return ResponseEntity.ok().build();
     }
