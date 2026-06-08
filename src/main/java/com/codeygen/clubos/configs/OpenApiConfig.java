@@ -5,9 +5,12 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.Collections;
 
 @Configuration
 public class OpenApiConfig {
@@ -22,8 +25,12 @@ public class OpenApiConfig {
                         .title("ClubOS API")
                         .description(
                                 "OpenAPI documentation for the ClubOS backend. " +
-                                "This API models governance-heavy workflows around member onboarding, task assignment, bidding, ownership, and submission review. " +
-                                "Authentication is still under development, so some endpoints are documented ahead of full auth enforcement."
+                                "Authentication is handled via Google OAuth2. \n\n" +
+                                "### Login Flow:\n" +
+                                "1. Navigate to `/oauth2/authorization/google` in your browser.\n" +
+                                "2. Upon successful login and email verification, the server returns a JSON with a `token`.\n" +
+                                "3. Use this token in the `Authorization` header as `Bearer <token>` for all other requests.\n" +
+                                "Note: Only emails registered in the database are allowed to login."
                         )
                         .version("1.0.0")
                         .contact(new Contact()
@@ -31,7 +38,7 @@ public class OpenApiConfig {
                                 .email("support@codeygen.dev"))
                         .license(new License()
                                 .name("MIT License")))
-
+                .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                 .components(new Components()
                         .addSecuritySchemes(securitySchemeName,
                                 new SecurityScheme()
@@ -39,6 +46,6 @@ public class OpenApiConfig {
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")
-                                        .description("Bearer token scheme reserved for the upcoming authentication module.")));
+                                        .description("Enter your JWT token here to authorize requests.")));
     }
 }

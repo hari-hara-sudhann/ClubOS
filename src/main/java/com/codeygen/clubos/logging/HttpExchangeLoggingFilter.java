@@ -57,22 +57,19 @@ public class HttpExchangeLoggingFilter extends OncePerRequestFilter {
             String query = request.getQueryString() == null ? "" : "?" + request.getQueryString();
 
             log.info(
-                    """
-                    http.exchange requestId={} method={} path={}{} status={} durationMs={} clientIp={} userAgent="{}"
-                    request.body={}
-                    response.body={}
-                    """,
+                    "HTTP EXCHANGE [{}]: method={} path={}{} status={} duration={}ms",
                     requestId,
                     request.getMethod(),
                     request.getRequestURI(),
                     query,
                     wrappedResponse.getStatus(),
-                    durationMs,
-                    request.getRemoteAddr(),
-                    request.getHeader("User-Agent"),
-                    requestBody,
-                    responseBody
+                    durationMs
             );
+
+            if (wrappedResponse.getStatus() >= 400 || request.getRequestURI().contains("/oauth2/")) {
+                log.info("Request Body [{}]: {}", requestId, requestBody);
+                log.info("Response Body [{}]: {}", requestId, responseBody);
+            }
 
             wrappedResponse.copyBodyToResponse();
         }
