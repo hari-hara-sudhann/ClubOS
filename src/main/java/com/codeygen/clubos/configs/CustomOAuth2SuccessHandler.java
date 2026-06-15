@@ -4,10 +4,12 @@ import com.codeygen.clubos.entities.user.User;
 import com.codeygen.clubos.repositories.user.UserRepository;
 import com.codeygen.clubos.utils.JwtUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.Jwt;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -19,12 +21,17 @@ import java.util.Map;
 import java.util.Optional;
 
 @Component
-@RequiredArgsConstructor
 public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtUtils jwtUtils;
     private final UserRepository userRepository;
-    private final ObjectMapper objectMapper;
+    @Value("${FRONTEND_URL}")
+    private String frontendUrl;
+
+    public CustomOAuth2SuccessHandler(JwtUtils jwtUtils, UserRepository userRepository) {
+        this.jwtUtils = jwtUtils;
+        this.userRepository = userRepository;
+    }
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
@@ -32,7 +39,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         String email = oAuth2User.getAttribute("email");
 
         if (email == null) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Email not found from OAuth2 provider");
+            response.sendRedirect(frontendUrl+"/?error=no_email");
             return;
         }
 
@@ -42,20 +49,10 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
             User user = userOptional.get();
             String jwt = jwtUtils.generateToken(user.getEmail(), user.getRole().name());
 
-            response.setContentType("application/json");
-            Map<String, String> tokenResponse = new HashMap<>();
-            tokenResponse.put("token", jwt);
-            tokenResponse.put("email", user.getEmail());
-            tokenResponse.put("role", user.getRole().name());
-
-            response.getWriter().write(objectMapper.writeValueAsString(tokenResponse));
+            String redirectUri = String.format(frontendUrl+"/auth/callback/?token=%s&role=%s", jwt, user.getRole().name());
+            response.sendRedirect(redirectUri);
         } else {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Forbidden");
-            errorResponse.put("message", "User with email " + email + " is not registered in the system.");
-            response.setContentType("application/json");
-            response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
+            response.sendRedirect(frontendUrl+"/?error=unregistered&email="+email);
         }
     }
 }
