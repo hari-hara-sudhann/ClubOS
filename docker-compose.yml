@@ -32,6 +32,7 @@ services:
       JWT_EXPIRATION: ${JWT_EXPIRATION}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
     restart: always
 
 volumes:
