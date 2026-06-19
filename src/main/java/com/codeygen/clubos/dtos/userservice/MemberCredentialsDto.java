@@ -1,5 +1,6 @@
 package com.codeygen.clubos.dtos.userservice;
 
+import com.codeygen.clubos.utils.CollegeMail;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -10,6 +11,7 @@ public class MemberCredentialsDto {
     private String registerNumber;
 
     @Schema(description = "Member email address.", example = "hari@example.com")
+    @CollegeMail
     private String email;
 
     @Schema(description = "Generated initial password that the member should change on first login.", example = "AB12CD34")

@@ -1,5 +1,6 @@
 package com.codeygen.clubos.dtos.userservice;
 
+import com.codeygen.clubos.utils.CollegeMail;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -13,5 +14,6 @@ public class MemberImportDto {
     private String registerNumber;
 
     @Schema(description = "Email address used for onboarding and login.", example = "hari@example.com")
+    @CollegeMail
     private String email;
 }
