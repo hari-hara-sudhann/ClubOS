@@ -1,6 +1,7 @@
 package com.codeygen.clubos.entities.user;
 
 import com.codeygen.clubos.entities.user.enums.Roles;
+import com.codeygen.clubos.utils.CollegeMail;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,6 +21,7 @@ public class User {
     private String userId;
 
     @Column(unique = true)
+    @CollegeMail
     private String email;
     
     private String name;
